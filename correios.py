@@ -7,7 +7,21 @@ import re
 import subprocess as s
 from time import sleep
 import os
-from notify_run import Notify
+import sys
+
+notify_installed=True
+try:
+    from notify_run import Notify
+    phone_notify = Notify()
+except:
+    if os.name != 'posix':
+        print("Erro: Voce nao esta usando linux, e sem notify_run")
+        ui = input("Deseja rodar mesmo sem notificacoes? (s/N) ")
+        if ui != 's' and ui != 'S' and ui != 'y' and ui != 'Y':
+            sys.exit()
+    else:
+        print("Rodando sem notificacoes para celular.")
+    notify_installed=False
 
 
 def notify(str_data):
@@ -18,8 +32,8 @@ def notify(str_data):
         s.call(['notify-send', '-u', 'critical', msg])
 
     # public notification (hides code)
-    phone_notify = Notify()
-    phone_notify.send('Correio\nRastreamento atualizado')
+    if notify_installed: 
+        phone_notify.send('Correio\nRastreamento atualizado')
 
 
 FILENAME="correios.html"
@@ -36,8 +50,8 @@ if os.name == 'posix':
     s.call(['notify-send', '-u', 'critical', msg])
 
 # public init msg
-phone_notify = Notify()
-phone_notify.send('Correio\nPrograma iniciou')
+if notify_installed:
+    phone_notify.send('Correio\nPrograma iniciou')
 
 while True:
     response = requests.post(url, data=post_params)
@@ -50,7 +64,7 @@ while True:
         old_events = str(f.read())
         f.close()
     except IOError:
-        print("can't read "+FILENAME)
+        print("arquivo "+FILENAME+" nao encontrado")
 
     # events changed
     if re.sub(r"\s+","",events) != re.sub(r"\s+","",old_events):
@@ -60,7 +74,7 @@ while True:
         e_place = row[5].strip()
         data = e_date+"\n"+e_time+"\n"+e_place
         f = open(FILENAME, "w")
-        print("updating "+FILENAME+"...")
+        print("atualizando "+FILENAME+"...")
         f.write(events)
         f.close()
         notify(data)
