@@ -68,15 +68,20 @@ while True:
 
     # events changed
     if re.sub(r"\s+","",events) != re.sub(r"\s+","",old_events):
-        row = re.split('<|>',str(list_events[0]).split('td')[1] )
-        e_date = row[1].strip()
-        e_time = row[3].strip()
-        e_place = row[5].strip()
-        data = e_date+"\n"+e_time+"\n"+e_place
-        f = open(FILENAME, "w")
-        print("atualizando "+FILENAME+"...")
-        f.write(events)
-        f.close()
-        notify(data)
+        try:
+            row = re.split('<|>',str(list_events[0]).split('td')[1] )
+            e_date = row[1].strip()
+            e_time = row[3].strip()
+            e_place = row[5].strip()
+            data = e_date+"\n"+e_time+"\n"+e_place
+        except:
+            print("Excecao na leitura dos dados")
+        else:
+            f = open(FILENAME, "w")
+            print("atualizando "+FILENAME+"...")
+            f.write(events)
+            f.close()
+            notify(data)
+
 
     sleep(120)
