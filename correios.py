@@ -29,8 +29,6 @@ except:
         f = open("notify_url.txt", "w")
         f.write(notify_url)
         f.close()
-    else:
-        print("Rodando sem notificacoes para celular")
 
 def notify(private_msg, public_msg):
     # local notification
