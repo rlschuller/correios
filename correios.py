@@ -10,31 +10,40 @@ import os
 import sys
 
 notify_installed=True
+notify_url=None
 try:
     from notify_run import Notify
     phone_notify = Notify()
 except:
-    if os.name != 'posix':
-        print("Erro: Voce nao esta usando linux, e sem notify_run")
-        ui = input("Deseja rodar mesmo sem notificacoes? (s/N) ")
-        if ui != 's' and ui != 'S' and ui != 'y' and ui != 'Y':
-            sys.exit()
-    else:
-        print("Rodando sem notificacoes para celular.")
     notify_installed=False
+    if os.name != 'posix':
+        print("Aviso: Voce nao esta usando linux, notificacoes para Desktop estao desativadas")
+    try:
+        print("lendo arquivo 'notify_run_url.txt'...")
+        f = open("notify_url.txt", "r")
+        notify_url = f.read().strip()
+        f.close()
+    except:
+        notify_url = input("Erro de leitura, digite o url\n").strip()
+        print("salvando arquivo 'notify_run_url.txt'...")
+        f = open("notify_url.txt", "w")
+        f.write(notify_url)
+        f.close()
+    else:
+        print("Rodando sem notificacoes para celular")
 
-
-def notify(str_data):
+def notify(private_msg, public_msg):
     # local notification
-    msg = 'Correios\n'+str_data
-    print(msg)
+    print(private_msg)
     if os.name == 'posix':
-        s.call(['notify-send', '-u', 'critical', msg])
+        s.call(['notify-send', '-u', 'critical', private_msg])
 
     # public notification (hides code)
     if notify_installed: 
-        phone_notify.send('Correio\nRastreamento atualizado')
-
+        phone_notify.send(public_msg)
+    else:
+        if str(requests.post(notify_url, public_msg)) != "<Response [200]>":
+            print("Erro mandando mensagem, url='"+notify_url+"', verifique o arquivo notify_url.txt")
 
 FILENAME="correios.html"
 f = open("codigo.txt", "r")
@@ -44,14 +53,9 @@ url = 'https://www2.correios.com.br/sistemas/rastreamento/ctrl/ctrlRastreamento.
 post_params = {'acao':'track', 'objetos':TRACK_CODE, 'btnPesq':'Buscar'}
 
 # local init msg
-msg = "Código\n"+TRACK_CODE
-print(msg)
-if os.name == 'posix':
-    s.call(['notify-send', '-u', 'critical', msg])
-
-# public init msg
-if notify_installed:
-    phone_notify.send('Correio\nPrograma iniciou')
+private_msg = "Código\n"+TRACK_CODE
+public_msg = 'Correios\nPrograma iniciou'
+notify(private_msg, public_msg)
 
 while True:
     response = requests.post(url, data=post_params)
@@ -75,13 +79,14 @@ while True:
             e_place = row[5].strip()
             data = e_date+"\n"+e_time+"\n"+e_place
         except:
-            print("Excecao na leitura dos dados")
+            print("Excecao na leitura dos dados, mostrados a seguir:")
+            print(events)
         else:
             f = open(FILENAME, "w")
             print("atualizando "+FILENAME+"...")
             f.write(events)
             f.close()
-            notify(data)
-
-
+            private_msg = 'Correios\n'+data
+            public_msg = 'Correios\nEvento atualizado'
+            notify(private_msg, public_msg)
     sleep(120)
